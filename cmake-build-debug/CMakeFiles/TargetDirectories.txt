@@ -1,0 +1,3 @@
+C:/Users/ilyac/CLionProjects/cpp_kyrsovaya/cmake-build-debug/CMakeFiles/cpp_kyrsovaya.dir
+C:/Users/ilyac/CLionProjects/cpp_kyrsovaya/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/ilyac/CLionProjects/cpp_kyrsovaya/cmake-build-debug/CMakeFiles/rebuild_cache.dir
