@@ -117,11 +117,15 @@ public:
         sort(students.begin(), students.end(), [](const Student& a, const Student& b) { return a.id < b.id; });
     }
 
-//    void showStudents() const {
-//        for (const auto& student : students) {
-//            cout << "ID: " << student.id << ", Name: " << student.firstName << " " << student.lastName << endl;
-//        }
-//    }
+    void showStudents() const {
+        int counter = 1;
+        for (const auto& student : students) {
+            cout << counter << ". ФИО: " << student.firstName << " " << student.lastName << " " << student.patronymic << ", Дата рождения: "
+            << student.birthDate << ", Год поступления: " << student.admissionYear << ", Институт: " << student.faculty << ", Кафедра: " <<
+            student.department << ", Группа: " << student.group << ", Номер зачётной книжки: " << student.id << ", Пол: " << student.sex << endl;
+            counter += 1;
+        }
+    }
 
     void showMenu() {
         int choice;
@@ -133,7 +137,9 @@ public:
             cout << "4. Отсортировать студентов по номерам зачётных книжек" << endl;
             cout << "5. Сохранить студентов в новый файл" << endl;
             cout << "6. Получить данные студента по номеру зачётной книжки" << endl;
-            cout << "7. Выход" << endl; // TODO get current list of students (showStudents())
+            cout << "7. Вывести весь список студентов на данный момент" << endl;
+            cout << "8. Сохранить изменения в исходный файл" << endl;
+            cout << "9. Выход" << endl;
             cout << "Введите команду:";
             cin >> choice;
 
@@ -199,7 +205,6 @@ public:
                 }
                 case 4:
                     sortStudentsById();
-//                    showStudents();
                     break;
                 case 5:
                     saveToFile("sorted_students.txt");
@@ -213,12 +218,19 @@ public:
                     cout << "Данные студента были получены." << endl;
                     break;
                 case 7:
+                    showStudents();
+                    break;
+                case 8:
+                    saveToFile("students.txt");
+                    cout << "Исходный файл был успешно перезаписан." << endl;
+                    break;
+                case 9:
                     cout << "Выход из программы." << endl;
                     break;
                 default:
                     cout << "Неверный ввод. Попробуйте ещё раз." << endl;
             }
-        } while (choice != 7);
+        } while (choice != 9);
     }
 };
 
