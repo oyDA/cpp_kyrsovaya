@@ -10,45 +10,41 @@ using namespace std;
 //
 //};
 
+
 class Student {
 public:
     string firstName;
     string lastName;
-    string patronymic; // TODO а вдруг у типули нет отчества?
+    string patronymic;
     string birthDate;
-    int admissionYear;
+    unsigned short admissionYear;
     string faculty;
     string department;
     string group;
-    int id;
+    int id; // TODO тип данных сменить и сортировку поменять
     string sex;
-//    сессия предметы там
+    // TODO сессию добавить оценки там всякое
 };
 
 class StudentManager {
 private:
-    vector<Student> students;
+    vector<Student> studentsDefault;
+    vector<Student> studentsOne;
+    vector<Student> studentsTwo;
+    unsigned short groupOnePar;
 
 public:
-    void readStudentsFromFile(const string& filename) {
-        ifstream file(filename, ios::binary);
-
-        while (file) {
-            Student student;
-            file >> student.firstName >> student.lastName >> student.patronymic >> student.birthDate >> student.admissionYear >>
-                 student.faculty >> student.department >> student.group >> student.id >> student.sex;
-            if (file) {
-                students.push_back(student);
-            }
-        }
-
-        file.close();
+    static string getFormatDate(unsigned short day, unsigned short month, unsigned short year) {
+        string dateDay = (day > 9 ? (to_string(day) + '.') : ('0' + to_string(day) + '.'));
+        string dateMonth = (month > 9 ? (to_string(month) + '.') : ('0' + to_string(month) + '.'));
+        string date = dateDay + dateMonth + to_string(year);
+        return date;
     }
 
-    void saveToFile(const string& filename) const {
+    static void saveToFile(const string& filename, vector<Student>& studentsVector) {
         ofstream file(filename, ios::binary);
 
-        for (const auto& student : students) {
+        for (const auto& student : studentsVector) {
             file << student.firstName << " " << student.lastName << " " << student.patronymic << " " << student.birthDate << " " <<
                  student.admissionYear << " " << student.faculty << " " << student.department << " " << student.group <<
                  " " << student.id << " " << student.sex << endl;
@@ -57,31 +53,90 @@ public:
         file.close();
     }
 
-    // TODO реализовать функцию следующего содержания: (Разбить группу на 2 части, с указанием интервала года рождения:
-    //                                                      1) студентов, поступивших в ВУЗ в одном и том же году;
-    //                                                      2) студентов, поступивших в ВУЗ в др. годы, отличные от части 1.
-    //                                                  Отсортировать каждую часть по номеру зачетных книжек.)
-
-    void updateStudentData(const string& firstName, const string& lastName, const string& patronymic, const string& birthDate,
-                           int admissionYear, const string& faculty, const string& department, const string& group, int id, const string& sex) {
-        for (auto& student : students) {
-            if (student.id == id) {
-                student.firstName = firstName;
-                student.lastName = lastName;
-                student.patronymic = patronymic;
-                student.birthDate = birthDate;
-                student.admissionYear = admissionYear;
-                student.faculty = faculty;
-                student.department = department;
-                student.group = group;
-                student.sex = sex;
-                break;
-            }
-        }
+    static void sortStudentsById(vector<Student>& studentsVector) {
+        sort(studentsVector.begin(), studentsVector.end(), [](const Student& a, const Student& b) { return a.id < b.id; });
     }
 
-    void getStudentData(int id) { // TODO выводить еще оценки надо ему
-        for (auto& student : students) {
+    void readStudentsFromFile(const string& filename, const string& groupOneName, const string& groupTwoName) {
+        ifstream file(filename, ios::binary);
+
+        while (file) {
+            Student student;
+            file >> student.firstName >> student.lastName >> student.patronymic >> student.birthDate >> student.admissionYear >>
+                 student.faculty >> student.department >> student.group >> student.id >> student.sex;
+            if (file) {
+                studentsDefault.push_back(student);
+            }
+        }
+
+        file.close();
+
+        groupOnePar = studentsDefault.front().admissionYear;
+        ifstream groupOne(groupOneName, ios::binary);
+        ifstream groupTwo(groupTwoName, ios::binary);
+
+        for (auto& student : studentsDefault) {
+            if (student.admissionYear == groupOnePar) {
+                studentsOne.push_back(student);
+            } else {
+                studentsTwo.push_back(student);
+            }
+        }
+
+        sortStudentsById(studentsOne);
+        sortStudentsById(studentsTwo);
+
+        saveToFile(groupOneName, studentsOne);
+        saveToFile(groupTwoName, studentsTwo);
+
+        groupOne.close();
+        groupTwo.close();
+    }
+
+    int updateStudentData(const string& groupOneName, const string& groupTwoName, const string& firstName, const string& lastName,
+                          const string& patronymic, const string& birthDate, unsigned short admissionYear, const string& faculty,
+                          const string& department, const string& group, int id, const string& sex) {
+        if (admissionYear == groupOnePar) {
+            for (auto& student : studentsOne) {
+                if (student.id == id) {
+                    student.firstName = firstName;
+                    student.lastName = lastName;
+                    student.patronymic = patronymic;
+                    student.birthDate = birthDate;
+                    student.admissionYear = admissionYear;
+                    student.faculty = faculty;
+                    student.department = department;
+                    student.group = group;
+                    student.sex = sex;
+                    saveToFile(groupOneName, studentsOne);
+                    sortStudentsById(studentsOne);
+                    return 0;
+                }
+            }
+        } else {
+            for (auto& student : studentsTwo) {
+                if (student.id == id) {
+                    student.firstName = firstName;
+                    student.lastName = lastName;
+                    student.patronymic = patronymic;
+                    student.birthDate = birthDate;
+                    student.admissionYear = admissionYear;
+                    student.faculty = faculty;
+                    student.department = department;
+                    student.group = group;
+                    student.sex = sex;
+                    saveToFile(groupTwoName, studentsTwo);
+                    sortStudentsById(studentsTwo);
+                    return 0;
+                }
+            }
+        }
+        cout << "Такого номера не существует." << endl;
+        return 1;
+    }
+
+    void getStudentData(const int id) { // TODO выводить еще оценки надо ему
+        for (auto& student : studentsDefault) {
             if (student.id == id) {
                 cout << student.firstName << endl;
                 cout << student.lastName << endl;
@@ -98,28 +153,24 @@ public:
     }
 
     void addStudent(const string& firstName, const string& lastName, const string& patronymic, const string& birthDate,
-                    int admissionYear, const string& faculty, const string& department, const string& group, int id, const string& sex) {
+                    unsigned short admissionYear, const string& faculty, const string& department, const string& group, int id, const string& sex) {
         Student newStudent = {firstName, lastName, patronymic, birthDate, admissionYear, faculty, department, group, id, sex};
         // TODO пресечь случаи одинакового id
         //      можно сделать список отдельный для всех id, как раз по критериям список нужен хоть 1
-        students.push_back(newStudent);
+        studentsDefault.push_back(newStudent);
         cout << "Студент успешно добавлен." << endl;
     }
 
     void deleteStudent(int id) {
-        students.erase(
-                remove_if(students.begin(), students.end(), [id](const Student& student) { return student.id == id; }),
-                students.end()
+        studentsDefault.erase(
+                remove_if(studentsDefault.begin(), studentsDefault.end(), [id](const Student& student) { return student.id == id; }),
+                studentsDefault.end()
         );
-    }
-
-    void sortStudentsById() {
-        sort(students.begin(), students.end(), [](const Student& a, const Student& b) { return a.id < b.id; });
     }
 
     void showStudents() const {
         int counter = 1;
-        for (const auto& student : students) {
+        for (const auto& student : studentsDefault) {
             cout << counter << ". ФИО: " << student.firstName << " " << student.lastName << " " << student.patronymic << ", Дата рождения: "
             << student.birthDate << ", Год поступления: " << student.admissionYear << ", Институт: " << student.faculty << ", Кафедра: " <<
             student.department << ", Группа: " << student.group << ", Номер зачётной книжки: " << student.id << ", Пол: " << student.sex << endl;
@@ -128,24 +179,22 @@ public:
     }
 
     void showMenu() {
-        int choice;
+        unsigned short choice;
         do {
             cout << "Меню:" << endl;
-            cout << "1. Обновить данные студента" << endl;
-            cout << "2. Добавить нового студента" << endl;
-            cout << "3. Удалить студента" << endl;
-            cout << "4. Отсортировать студентов по номерам зачётных книжек" << endl;
-            cout << "5. Сохранить студентов в новый файл" << endl;
-            cout << "6. Получить данные студента по номеру зачётной книжки" << endl;
-            cout << "7. Вывести весь список студентов на данный момент" << endl;
-            cout << "8. Сохранить изменения в исходный файл" << endl;
-            cout << "9. Выход" << endl;
+            cout << "1. Обновить данные студента" << endl; // РАБОТАЕТ
+//            cout << "2. Добавить нового студента" << endl; // TODO ПАМЕНЯТЬ
+//            cout << "3. Удалить студента" << endl; // TODO ПАМЕНЯТЬ
+//            cout << "4. Получить данные студента по номеру зачётной книжки" << endl; // TODO ПАМЕНЯТЬ
+//            cout << "7. Вывести весь список студентов на данный момент" << endl; // TODO ПАМЕНЯТЬ
+            cout << "9. Выход" << endl; // РАБОТАЕТ АХАХАХА))
             cout << "Введите команду:";
             cin >> choice;
 
-            switch (choice) {
+            switch (choice) { // TODO во все функции допилить проверку в какой именно файл записывать
                 case 1: {
-                    int id, admissionYear;
+                    int id;
+                    unsigned short admissionYear, birthDay, birthMonth, birthYear;
                     string firstName, lastName, patronymic, birthDate, faculty, department, group, sex;
                     cout << "Введите номер зачётной книжки студента:";
                     cin >> id;
@@ -155,11 +204,17 @@ public:
                     cin >> lastName;
                     cout << "Введите новое отчество:";
                     cin >> patronymic;
-                    cout << "Введите новую дату рождения:";
-                    cin >> birthDate;
+                    cout << "Введите новую дату рождения:" << endl;
+                    cout << "День:";
+                    cin >> birthDay;
+                    cout << "Месяц:";
+                    cin >> birthMonth;
+                    cout << "Год:";
+                    cin >> birthYear;
+                    birthDate = getFormatDate(birthDay, birthMonth, birthYear);
                     cout << "Введите новый год поступления:";
                     cin >> admissionYear;
-                    cout << "Введите новый факультет:";
+                    cout << "Введите новый факультет/институт:";
                     cin >> faculty;
                     cout << "Введите новую кафедру:";
                     cin >> department;
@@ -167,80 +222,78 @@ public:
                     cin >> group;
                     cout << "Введите новый пол:";
                     cin >> sex;
-                    updateStudentData(firstName, lastName, patronymic, birthDate, admissionYear, faculty, department, group, id, sex);
+                    updateStudentData("groupOne.txt", "groupTwo.txt", firstName, lastName, patronymic, birthDate, admissionYear, faculty, department, group, id, sex);
                     break;
                 }
-                case 2: {
-                    int id, admissionYear;
-                    string firstName, lastName, patronymic, birthDate, faculty, department, group, sex;
-                    cout << "Введите номер зачётной книжки студента:";
-                    cin >> id;
-                    cout << "Введите имя студента:";
-                    cin >> firstName;
-                    cout << "Введите фамилию студента:";
-                    cin >> lastName;
-                    cout << "Введите отчество студента:";
-                    cin >> patronymic;
-                    cout << "Введите дату рождения студента:";
-                    cin >> birthDate;
-                    cout << "Введите год поступления студента:";
-                    cin >> admissionYear;
-                    cout << "Введите факультет студента:";
-                    cin >> faculty;
-                    cout << "Введите кафедру студента:";
-                    cin >> department;
-                    cout << "Введите группу студента:";
-                    cin >> group;
-                    cout << "Введите пол студента:";
-                    cin >> sex;
-                    addStudent(firstName, lastName, patronymic, birthDate, admissionYear, faculty, department, group, id, sex);
-                    break;
-                }
-                case 3: {
-                    int id;
-                    cout << "Введите номер зачётной книжки студента для удаления:";
-                    cin >> id;
-                    deleteStudent(id);
-                    break;
-                }
-                case 4:
-                    sortStudentsById();
-                    break;
-                case 5:
-                    saveToFile("sorted_students.txt");
-                    cout << "Студенты сохранены в файл." << endl;
-                    break;
-                case 6:
-                    int id;
-                    cout << "Введите номер зачётной книжки студента для получения данных:";
-                    cin >> id;
-                    getStudentData(id);
-                    cout << "Данные студента были получены." << endl;
-                    break;
-                case 7:
-                    showStudents();
-                    break;
-                case 8:
-                    saveToFile("students.txt");
-                    cout << "Исходный файл был успешно перезаписан." << endl;
-                    break;
+//                case 2: {
+//                    int id;
+//                    unsigned short admissionYear, birthDay, birthMonth, birthYear;
+//                    string firstName, lastName, patronymic, birthDate, faculty, department, group, sex;
+//                    cout << "Введите номер зачётной книжки студента:";
+//                    cin >> id;
+//                    cout << "Введите имя студента:";
+//                    cin >> firstName;
+//                    cout << "Введите фамилию студента:";
+//                    cin >> lastName;
+//                    cout << "Введите отчество студента:";
+//                    cin >> patronymic;
+//                    cout << "Введите дату рождения студента:" << endl;
+//                    cout << "День:";
+//                    cin >> birthDay;
+//                    cout << "Месяц:";
+//                    cin >> birthMonth;
+//                    cout << "Год:";
+//                    cin >> birthYear;
+//                    birthDate = getFormatDate(birthDay, birthMonth, birthYear);
+//                    cout << "Введите год поступления студента:";
+//                    cin >> admissionYear;
+//                    cout << "Введите факультет/институт студента:";
+//                    cin >> faculty;
+//                    cout << "Введите кафедру студента:";
+//                    cin >> department;
+//                    cout << "Введите группу студента:";
+//                    cin >> group;
+//                    cout << "Введите пол студента:";
+//                    cin >> sex;
+//                    addStudent(firstName, lastName, patronymic, birthDate, admissionYear, faculty, department, group, id, sex);
+//                    break;
+//                }
+//                case 3: {
+//                    int id;
+//                    cout << "Введите номер зачётной книжки студента для удаления:";
+//                    cin >> id;
+//                    deleteStudent(id);
+//                    break;
+//                }
+//                case 4:
+//                    int id;
+//                    cout << "Введите номер зачётной книжки студента для получения данных:";
+//                    cin >> id;
+//                    getStudentData(id);
+//                    cout << "Данные студента были получены." << endl;
+//                    break;
+//                case 7:
+//                    showStudents();
+//                    break;
                 case 9:
                     cout << "Выход из программы." << endl;
                     break;
                 default:
                     cout << "Неверный ввод. Попробуйте ещё раз." << endl;
             }
-        } while (choice != 9);
+        } while (choice != 9); // TODO пофиксить ввод строки (бесконечное залупливание)
     }
 };
 
 int main() {
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
+
     StudentManager studentManager;
 
-    studentManager.readStudentsFromFile("students.txt");
+    studentManager.readStudentsFromFile("students.txt", "groupOne.txt", "groupTwo.txt");
     studentManager.showMenu();
+
 
     return 0;
 }
