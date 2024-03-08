@@ -2,7 +2,7 @@
 
 ---
 
-> #### if you are using clion change encodings:  
+> #### change encodings:  
 > for project - **system default windows 1251**  
 > for all files - **windows 1251**
 
