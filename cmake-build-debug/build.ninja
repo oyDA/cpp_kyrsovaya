@@ -55,6 +55,12 @@ build CMakeFiles/cpp_kyrsovaya.dir/main.cpp.obj: CXX_COMPILER__cpp_kyrsovaya_uns
   OBJECT_DIR = CMakeFiles\cpp_kyrsovaya.dir
   OBJECT_FILE_DIR = CMakeFiles\cpp_kyrsovaya.dir
 
+build CMakeFiles/cpp_kyrsovaya.dir/test.cpp.obj: CXX_COMPILER__cpp_kyrsovaya_unscanned_Debug C$:/Users/ilyac/CLionProjects/cpp_kyrsovaya/test.cpp || cmake_object_order_depends_target_cpp_kyrsovaya
+  DEP_FILE = CMakeFiles\cpp_kyrsovaya.dir\test.cpp.obj.d
+  FLAGS = -g -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles\cpp_kyrsovaya.dir
+  OBJECT_FILE_DIR = CMakeFiles\cpp_kyrsovaya.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target cpp_kyrsovaya
@@ -63,7 +69,7 @@ build CMakeFiles/cpp_kyrsovaya.dir/main.cpp.obj: CXX_COMPILER__cpp_kyrsovaya_uns
 #############################################
 # Link the executable cpp_kyrsovaya.exe
 
-build cpp_kyrsovaya.exe: CXX_EXECUTABLE_LINKER__cpp_kyrsovaya_Debug CMakeFiles/cpp_kyrsovaya.dir/main.cpp.obj
+build cpp_kyrsovaya.exe: CXX_EXECUTABLE_LINKER__cpp_kyrsovaya_Debug CMakeFiles/cpp_kyrsovaya.dir/main.cpp.obj CMakeFiles/cpp_kyrsovaya.dir/test.cpp.obj
   FLAGS = -g
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\cpp_kyrsovaya.dir

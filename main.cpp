@@ -40,7 +40,7 @@ public:
         return date;
     }
 
-     static void saveToFile(const string& filename, vector<Student>& studentsVector) {
+    static void saveToFile(const string& filename, vector<Student>& studentsVector) {
         ofstream file(filename, ios::binary | ios::app);
 
         for (const auto& student : studentsVector) {
@@ -177,9 +177,9 @@ public:
         int counter = 1;
         for (const auto& student : studentsDefault) {
             cout << counter << ". ФИО: " << student.firstName << " " << student.lastName << " " << student.patronymic
-            << ", Дата рождения: " << student.birthDate << ", Год поступления: " << student.admissionYear << ", Институт: "
-            << student.faculty << ", Кафедра: " << student.department << ", Группа: " << student.group
-            << ", Номер зачётной книжки: " << student.id << ", Пол: " << student.sex << endl;
+                 << ", Дата рождения: " << student.birthDate << ", Год поступления: " << student.admissionYear << ", Институт: "
+                 << student.faculty << ", Кафедра: " << student.department << ", Группа: " << student.group
+                 << ", Номер зачётной книжки: " << student.id << ", Пол: " << student.sex << endl;
             counter += 1;
         }
     }
@@ -280,7 +280,7 @@ public:
                     cin >> id;
                     getStudentData(id);
                     cout << "Данные студента были получены." << endl;
-                    }
+                }
                     break;
                 case 6:
                     showStudents();
