@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <windows.h>
 #include <string>
-#include <limits>
+#include <set>
 
 using namespace std;
 
@@ -22,7 +22,7 @@ public:
     string group;
     string id;
     string sex;
-    // TODO добавить сессию+оценки
+    // TODO добавить оценки
 };
 
 class StudentManager {
@@ -30,7 +30,8 @@ private:
     vector<Student> studentsDefault;
     vector<Student> studentsOne;
     vector<Student> studentsTwo;
-    unsigned short groupOnePar, count;
+    unsigned short groupOnePar;
+    set<string> idSet;
 
 public:
     static string getFormatDate(unsigned short day, unsigned short month, unsigned short year) {
@@ -65,12 +66,9 @@ public:
                  student.faculty >> student.department >> student.group >> student.id >> student.sex;
             if (file) {
                 studentsDefault.push_back(student);
+                idSet.insert(student.id);
             }
         }
-
-        count = size(studentsDefault);
-
-        file.close();
     }
 
     void splitStudents(const string& groupOneName, const string& groupTwoName) {
@@ -91,7 +89,7 @@ public:
         }
 
         const auto [minOne, maxOne] = std::minmax_element(begin(grOneDates), end(grOneDates));
-        const auto [minTwo, maxTwo] = std::minmax_element(begin(grOneDates), end(grOneDates));
+        const auto [minTwo, maxTwo] = std::minmax_element(begin(grTwoDates), end(grTwoDates));
 
         ofstream grOne(groupOneName, ios::binary);
         ofstream grTwo(groupTwoName, ios::binary);
@@ -120,7 +118,7 @@ public:
 
     int updateStudentData(const string& firstName, const string& lastName,
                           const string& patronymic, const string& birthDate, unsigned short admissionYear, const string& faculty,
-                          const string& department, const string& group, const string& id, const string& sex) {
+                          const string& department, const string& group, const string& id, const string& sex, const string& newId) {
         for (auto& student : studentsDefault) {
             if (student.id == id) {
                 student.firstName = firstName;
@@ -132,6 +130,9 @@ public:
                 student.department = department;
                 student.group = group;
                 student.sex = sex;
+                student.id = newId;
+                idSet.insert(newId);
+                idSet.erase(id);
                 return 0;
             }
         }
@@ -160,8 +161,8 @@ public:
                     unsigned short admissionYear, const string& faculty, const string& department, const string& group,
                     const string& id, const string& sex) {
         Student newStudent = {firstName, lastName, patronymic, birthDate, admissionYear, faculty, department, group, id, sex};
-        // TODO пресечь случаи одинакового id
         studentsDefault.push_back(newStudent);
+        idSet.insert(newStudent.id);
         cout << "Студент успешно добавлен." << endl;
     }
 
@@ -184,118 +185,138 @@ public:
         }
     }
 
-    void showMenu() {
-        int choice;
-        do {
-            cout << "Меню:" << endl;
-            cout << "1. Разделить на две группы по году поступления и отсортировать" << endl;
-            cout << "2. Обновить данные студента" << endl; // РАБОТАЕТ
-            cout << "3. Добавить нового студента" << endl;
-            cout << "4. Удалить студента" << endl;
-            cout << "5. Получить данные студента по номеру зачётной книжки" << endl;
-            cout << "6. Вывести весь список студентов на данный момент" << endl;
-            cout << "7. Выход" << endl;
-            cout << "Введите команду:";
-            cin >> choice;
-
-            switch (choice) {
-                case 1: {
-                    splitStudents("groupOne.txt", "groupTwo.txt");
-                    break;
-                }
-                case 2: {
-                    unsigned short admissionYear, birthDay, birthMonth, birthYear;
-                    string id, firstName, lastName, patronymic, birthDate, faculty, department, group, sex;
-                    cout << "Введите номер зачётной книжки студента:";
-                    cin >> id; // TODO если такого id нет -> break
-                    cout << "Введите новое имя:";
-                    cin >> firstName;
-                    cout << "Введите новую фамилию:";
-                    cin >> lastName;
-                    cout << "Введите новое отчество:";
-                    cin >> patronymic;
-                    cout << "Введите новую дату рождения:" << endl;
-                    cout << "День:";
-                    cin >> birthDay;
-                    cout << "Месяц:";
-                    cin >> birthMonth;
-                    cout << "Год:";
-                    cin >> birthYear;
-                    birthDate = getFormatDate(birthDay, birthMonth, birthYear);
-                    cout << "Введите новый год поступления:";
-                    cin >> admissionYear;
-                    cout << "Введите новый факультет/институт:";
-                    cin >> faculty;
-                    cout << "Введите новую кафедру:";
-                    cin >> department;
-                    cout << "Введите новую группу:";
-                    cin >> group;
-                    cout << "Введите новый пол:";
-                    cin >> sex;
-                    updateStudentData(firstName, lastName, patronymic, birthDate, admissionYear, faculty, department, group, id, sex);
-                    break;
-                }
-                case 3: {
-                    unsigned short admissionYear, birthDay, birthMonth, birthYear;
-                    string id, firstName, lastName, patronymic, birthDate, faculty, department, group, sex;
-                    cout << "Введите номер зачётной книжки студента:";
-                    cin >> id; // TODO если такое id есть -> break
-                    cout << "Введите имя студента:";
-                    cin >> firstName;
-                    cout << "Введите фамилию студента:";
-                    cin >> lastName;
-                    cout << "Введите отчество студента:";
-                    cin >> patronymic;
-                    cout << "Введите дату рождения студента:" << endl;
-                    cout << "День:";
-                    cin >> birthDay;
-                    cout << "Месяц:";
-                    cin >> birthMonth;
-                    cout << "Год:";
-                    cin >> birthYear;
-                    birthDate = getFormatDate(birthDay, birthMonth, birthYear);
-                    cout << "Введите год поступления студента:";
-                    cin >> admissionYear;
-                    cout << "Введите факультет/институт студента:";
-                    cin >> faculty;
-                    cout << "Введите кафедру студента:";
-                    cin >> department;
-                    cout << "Введите группу студента:";
-                    cin >> group;
-                    cout << "Введите пол студента:";
-                    cin >> sex;
-                    addStudent(firstName, lastName, patronymic, birthDate, admissionYear, faculty, department, group, id, sex);
-                    break;
-                }
-                case 4: {
-                    string id;
-                    cout << "Введите номер зачётной книжки студента для удаления:";
-                    cin >> id;
-                    deleteStudent(id);
-                    break;
-                }
-                case 5: {
-                    string id;
-                    cout << "Введите номер зачётной книжки студента для получения данных:";
-                    cin >> id;
-                    getStudentData(id);
-                    cout << "Данные студента были получены." << endl;
-                }
-                    break;
-                case 6:
-                    showStudents();
-                    break;
-                case 7:
-                    cout << "Выход из программы." << endl;
-                    break;
-                default:
-                    cout << "Неверный ввод. Попробуйте ещё раз." << endl;
-                    cin.clear();
-                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                    break;
+    void printMainMenu() {
+        string tag;
+        vector<string> keys = {"1", "2", "3", "4", "5", "6", "7", "q"};
+        cout << "Меню:" << endl;
+        cout << "1. Разделить на две группы по году поступления и отсортировать" << endl;
+        cout << "2. Обновить данные студента" << endl;
+        cout << "3. Добавить нового студента" << endl;
+        cout << "4. Удалить студента" << endl;
+        cout << "5. Получить данные студента по номеру зачётной книжки" << endl;
+        cout << "6. Вывести весь список студентов на данный момент" << endl;
+        cout << "7. Выход" << endl;
+        cout << "Введите команду:";
+        getline(cin, tag);
+        if (tag.empty()) getline(cin, tag);
+        while (find(keys.begin(), keys.end(), tag) == keys.end()) {
+            cerr << "Неверный ввод. Попробуйте ещё раз." << endl;
+            getline(cin, tag);
+        }
+        if (tag == "1") {
+            splitStudents("groupOne.bin", "groupTwo.bin");
+            cout << "Данные студентов были записаны в соответствующие файлы." << endl;
+            printMainMenu();
+        }
+        if (tag == "2") {
+            unsigned short admissionYear, birthDay, birthMonth, birthYear;
+            string id, firstName, lastName, patronymic, birthDate, faculty, department, group, sex, newId;
+            cout << "Введите номер зачётной книжки студента:";
+            cin >> id;
+            if (!idSet.count(id)) {
+                cout << "Такого номера зачётной книжки не существует." << endl;
+            } else {
+                cout << "Введите новое имя:";
+                cin >> firstName;
+                cout << "Введите новую фамилию:";
+                cin >> lastName;
+                cout << "Введите новое отчество:";
+                cin >> patronymic;
+                cout << "Введите новую дату рождения:" << endl;
+                cout << "День:";
+                cin >> birthDay;
+                cout << "Месяц:";
+                cin >> birthMonth;
+                cout << "Год:";
+                cin >> birthYear;
+                birthDate = getFormatDate(birthDay, birthMonth, birthYear);
+                cout << "Введите новый год поступления:";
+                cin >> admissionYear;
+                cout << "Введите новый факультет/институт:";
+                cin >> faculty;
+                cout << "Введите новую кафедру:";
+                cin >> department;
+                cout << "Введите новую группу:";
+                cin >> group;
+                cout << "Введите новый пол:";
+                cin >> sex;
+                cout << "Введите новый номер зачётной книжки:";
+                cin >> newId;
+                updateStudentData(firstName, lastName, patronymic, birthDate, admissionYear, faculty, department, group, id, sex, newId);
+                cout << "Данные студента были обновлены." << endl;
             }
-        } while (choice != 7);
+            printMainMenu();
+        }
+        if (tag == "3") {
+            unsigned short admissionYear, birthDay, birthMonth, birthYear;
+            string id, firstName, lastName, patronymic, birthDate, faculty, department, group, sex;
+            cout << "Введите номер зачётной книжки студента:";
+            cin >> id;
+            if (idSet.count(id)) {
+                cout << "Такой номер зачётной книжки уже существует." << endl;
+            } else {
+                cout << "Введите имя студента:";
+                cin >> firstName;
+                cout << "Введите фамилию студента:";
+                cin >> lastName;
+                cout << "Введите отчество студента:";
+                cin >> patronymic;
+                cout << "Введите дату рождения студента:" << endl;
+                cout << "День:";
+                cin >> birthDay;
+                cout << "Месяц:";
+                cin >> birthMonth;
+                cout << "Год:";
+                cin >> birthYear;
+                birthDate = getFormatDate(birthDay, birthMonth, birthYear);
+                cout << "Введите год поступления студента:";
+                cin >> admissionYear;
+                cout << "Введите факультет/институт студента:";
+                cin >> faculty;
+                cout << "Введите кафедру студента:";
+                cin >> department;
+                cout << "Введите группу студента:";
+                cin >> group;
+                cout << "Введите пол студента:";
+                cin >> sex;
+                addStudent(firstName, lastName, patronymic, birthDate, admissionYear, faculty, department, group, id, sex);
+                cout << "Данные студента был добавлен." << endl;
+            }
+            printMainMenu();
+        }
+        if (tag == "4") {
+            string id;
+            cout << "Введите номер зачётной книжки студента для удаления:";
+            cin >> id;
+            if (!idSet.count(id)) {
+                cout << "Такого номера зачётной книжки не существует." << endl;
+            } else {
+                deleteStudent(id);
+                cout << "Данные студента были удалены." << endl;
+            }
+            printMainMenu();
+        }
+        if (tag == "5") {
+            string id;
+            cout << "Введите номер зачётной книжки студента для получения данных:";
+            cin >> id;
+            if (!idSet.count(id)) {
+                cout << "Такого номера зачётной книжки не существует." << endl;
+            } else {
+                getStudentData(id);
+                cout << "Данные студента были получены." << endl;
+            }
+            printMainMenu();
+        }
+        if (tag == "6") {
+            showStudents();
+            printMainMenu();
+        }
+        if (tag == "7") {
+            exit(0);
+        }
     }
+
 };
 
 int main() {
@@ -304,15 +325,11 @@ int main() {
 
     StudentManager studentManager;
 
-    studentManager.readStudentsFromFile("students.txt");
-    studentManager.showMenu();
+    studentManager.readStudentsFromFile("students.bin");
+    studentManager.printMainMenu();
 
 
     return 0;
 }
 
-// TODO бинарные файлы
-
 // TODO сделать де+шифрование
-
-// TODO у каждого кейса подписать успешное/неудачное выполнение действия
