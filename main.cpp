@@ -13,16 +13,16 @@
 
 using namespace std;
 
-vector <vector <string>> TermSubjects{
-        {"Eng", "History", "IT", "LineAlg", "MathAn", "PE", "Physics", "ProgLang", "Russian", "VPD"},
-        {"DiscMath", "Economics", "Eng", "History", "LineAlg", "MathAn", "PE", "Physics", "ProgLang"},
-        {"AI", "DiffEq", "ElTech", "Eng", "Law", "LineAlg", "MathAn", "MathLog", "PE", "SocPsycho"},
-        {"BigData", "BusModel", "ElTech", "Eng", "OS", "OrgEVM", "PE", "Phyl", "TeorVer", "UgrAndUya"},
-        {"ASModel", "BioSys", "BusModel", "Crypto", "Networks", "TeorDB", "UgrAndUya"}, //5 сем
-        {"BZD", "BioSys", "Crypto", "DBSafety", "PAMethods", "TechSafeMethods", "VSSafety"},
-        {"DBSafety", "PAMethods", "PaySafety", "TeorRel"},
-        {"ISAdmin", "InfProtection", "MakeAS", "MarkIB", "PAMethods"},
-        {"ASSafety", "DiagCZ", "MakeAS", "ManageIB", "ProtectGos"},
+vector <vector <string>> semesterSubjects{
+        /* 1 */{"English", "History", "IT", "LineAlg", "MathAn", "PE", "Physics", "ProgLang", "Russian", "VPD"},
+        /* 2 */{"DiscMath", "Economics", "English", "History", "LineAlg", "MathAn", "PE", "Physics", "ProgLang"},
+        /* 3 */{"AI", "DiffEq", "ElTech", "English", "Law", "LineAlg", "MathAn", "MathLog", "PE", "SocPsycho"},
+        /* 4 */{"BigData", "BusModel", "ElTech", "English", "OS", "OrgEVM", "PE", "Phyl", "TeorVer", "UgrAndUya"},
+        /* 5 */{"ASModel", "BioSys", "BusModel", "Crypto", "Networks", "TeorDB", "UgrAndUya"},
+        /* 6 */{"BZD", "BioSys", "Crypto", "DBSafety", "PAMethods", "TechSafeMethods", "VSSafety"},
+        /* 7 */{"DBSafety", "PAMethods", "PaySafety", "TeorRel"},
+        /* 8 */{"ISAdmin", "InfProtection", "MakeAS", "MarkIB", "PAMethods"},
+        /* 9 */{"ASSafety", "DiagCZ", "MakeAS", "ManageIB", "ProtectGos"},
 };
 
 map<string, string> subjectsInterpretations{
@@ -34,7 +34,7 @@ map<string, string> subjectsInterpretations{
         pair <string, string>{"Russian", "Русский язык"},
         pair <string, string>{"VPD", "ВПД"},
         pair <string, string>{"PE", "Физ-ра"},
-        pair <string, string>{"Eng", "Иностранный язык"},
+        pair <string, string>{"English", "Иностранный язык"},
         pair <string, string>{"ProgLang", "Языки программирования"},
         pair <string, string>{"Economics", "Экономическая культура"},
         pair <string, string>{"DiscMath", "Дискретная математика"},
@@ -94,7 +94,7 @@ public:
     unordered_map<string, unordered_map<string, string>> marks;
     Semester* next;
 
-    Semester(int index) : index(index), next(nullptr) {}
+    explicit Semester(int index) : index(index), next(nullptr) {}
 
     void addGrade(const string& subject, const string& studentId, const string& grade) {
         marks[subject][studentId] = grade;
@@ -117,7 +117,7 @@ public:
         }
     }
 
-    bool hasGrades() {
+    bool hasGrades() const {
         return !marks.empty();
     }
 };
@@ -169,7 +169,12 @@ public:
             if (!found) {
                 current->addGrade(subject, studentId, grade);
             }
-            subjectsBySemester[semesterIndex].insert(subject);
+            for (const auto& subjectInSemester : semesterSubjects[semesterIndex - 1]) {
+                if (subjectsInterpretations[subjectInSemester] == subject) {
+                    subjectsBySemester[semesterIndex].insert(subjectInSemester);
+                    break;
+                }
+            }
             addStudent(studentId);
         } else {
             while (current == nullptr || current->index < semesterIndex) {
@@ -180,7 +185,12 @@ public:
                 }
             }
             current->addGrade(subject, studentId, grade);
-            subjectsBySemester[semesterIndex].insert(subject);
+            for (const auto& subjectInSemester : semesterSubjects[semesterIndex - 1]) {
+                if (subjectsInterpretations[subjectInSemester] == subject) {
+                    subjectsBySemester[semesterIndex].insert(subjectInSemester);
+                    break;
+                }
+            }
             addStudent(studentId);
         }
     }
@@ -193,22 +203,22 @@ public:
         if (current != nullptr) {
             current->removeGrade(subject, studentId);
         } else {
-            cout << "Semester not found: " << semesterIndex << endl;
+            cout << "Семестр не найден: " << semesterIndex << endl;
         }
     }
 
-    string getGrade() { // TODO добавить тег и типа узнать определенную оценку
+    string getGrade() {
         int semesterIndex;
         string subject, studentId;
 
-        cout << "Enter semester index: ";
+        cout << "Введите индекс семестра (1-9): ";
         cin >> semesterIndex;
-        cin.ignore(); // Ignore newline character
+        cin.ignore();
 
-        cout << "Enter subject: ";
+        cout << "Введите название предмета: ";
         getline(cin, subject);
 
-        cout << "Enter student ID: ";
+        cout << "Введите номер зачётной книжки студента: ";
         getline(cin, studentId);
 
         Semester* current = head;
@@ -218,7 +228,7 @@ public:
             }
             current = current->next;
         }
-        cout << "Semester not found: " << semesterIndex << endl;
+        cout << "Семестр не найден: " << semesterIndex << endl;
         return "";
     }
 
@@ -226,36 +236,35 @@ public:
         int semesterIndex;
         string subject, studentId, grade;
 
-        cout << "Enter semester index: ";
+        cout << "Введите индекс семестра: ";
         cin >> semesterIndex;
-        cin.ignore(); // Ignore newline character
+        cin.ignore();
 
-        // Check if the semester index is valid
         if (semesterIndex < 1 || semesterIndex > 9) {
-            cout << "Invalid semester index. Semester index must be between 1 and 9." << endl;
+            cout << "Неверный индекс семестра. Индекс семестра должен быть от 1 до 9." << endl;
             return;
         }
 
-        // Check if the subject is valid for the selected semester
+        cout << "Введите предмет: ";
+        getline(cin, subject);
+
         bool subjectFound = false;
-        for (const auto& subjectInSemester : TermSubjects[semesterIndex - 1]) {
-            if (subjectInSemester == subject) {
+        for (const auto& subjectInSemester : semesterSubjects[semesterIndex - 1]) {
+            if (subject == subjectsInterpretations[subjectInSemester]) {
                 subjectFound = true;
+                subject = subjectInSemester;
                 break;
             }
         }
         if (!subjectFound) {
-            cout << "Subject '" << subject << "' is not valid for semester " << semesterIndex << ". Please try again." << endl;
+            cout << "Предмет '" << subject << "' не является действительным для семестра " << semesterIndex << ". Пожалуйста, попробуйте снова." << endl;
             return;
         }
 
-        cout << "Enter subject: ";
-        getline(cin, subject);
-
-        cout << "Enter student ID: ";
+        cout << "Введите номер зачётной книжки студента: ";
         getline(cin, studentId);
 
-        cout << "Enter grade: ";
+        cout << "Введите оценку: ";
         getline(cin, grade);
 
         addGrade(semesterIndex, subject, studentId, grade);
@@ -265,14 +274,14 @@ public:
         int semesterIndex;
         string subject, studentId;
 
-        cout << "Enter semester index: ";
+        cout << "Введите индекс семестра: ";
         cin >> semesterIndex;
-        cin.ignore(); // Ignore newline character
+        cin.ignore();
 
-        cout << "Enter subject: ";
+        cout << "Введите предмет: ";
         getline(cin, subject);
 
-        cout << "Enter student ID: ";
+        cout << "Введите номер зачётной книжки студента: ";
         getline(cin, studentId);
 
         removeGrade(semesterIndex, subject, studentId);
@@ -282,50 +291,56 @@ public:
         Semester* current = head;
         while (current != nullptr) {
             if (current->hasGrades()) {
-                cout << "Grades for semester: " << current->index << endl;
-                cout << string(12, '-') << string(12 * subjectsBySemester[current->index].size(), '-') << endl;
+                cout << "Оценки за семестр: " << current->index << endl;
+                cout << endl;
 
-                // Print the header row
-                cout << setw(12) << "Student ID";
-                for (const auto& subject : subjectsBySemester[current->index]) {
-                    cout << setw(12) << subject;
+                // Собираем список всех предметов в этом семестре
+                vector<string> subjects;
+                for (const auto& [subject, grades] : current->marks) {
+                    subjects.push_back(subject);
+                }
+
+                // Вычисляем максимальную ширину столбцов
+                int maxWidth = 10;
+                for (const auto& subject : subjects) {
+                    maxWidth = max(maxWidth, static_cast<int>(subjectsInterpretations[subject].length()));
+                }
+                maxWidth = max(maxWidth, 10);
+
+                // Выводим заголовок таблицы
+                cout << "| " << setw(10) << left << "Номер";
+                for (const auto& subject : subjects) {
+                    cout << " | " << setw(maxWidth) << left << subjectsInterpretations[subject];
                 }
                 cout << endl;
 
-                // Print the separator row
-                cout << setw(12) << string(12, '-');
-                for (size_t i = 0; i < subjectsBySemester[current->index].size(); i++) {
-                    cout << setw(12) << string(12, '-');
-                }
-                cout << endl;
+                cout << string(10 + maxWidth * subjects.size() + (subjects.size() - 1) * 3, '-') << endl;
 
-                // Print the grades
-                bool hasGrades = false;
+                // Выводим данные по студентам
                 for (const auto& [studentId, index] : studentIdToIndex) {
-                    bool hasStudentGrades = false;
-                    for (const auto& subject : subjectsBySemester[current->index]) {
+                    bool hasGrades = false;
+                    for (const auto& subject : subjects) {
                         string grade = current->getGrade(subject, studentId);
                         if (!grade.empty()) {
-                            hasStudentGrades = true;
                             hasGrades = true;
                             break;
                         }
                     }
-                    if (hasStudentGrades) {
-                        cout << setw(12) << studentId;
-                        for (const auto& subject : subjectsBySemester[current->index]) {
+                    if (hasGrades) {
+                        cout << "| " << setw(10) << left << studentId;
+                        for (const auto& subject : subjects) {
                             string grade = current->getGrade(subject, studentId);
                             if (!grade.empty()) {
-                                cout << setw(12) << grade;
+                                cout << " | " << setw(maxWidth) << left << grade;
                             } else {
-                                cout << setw(12) << "N/A";
+                                cout << " | " << setw(maxWidth) << left << " ";
                             }
                         }
                         cout << endl;
                     }
                 }
-                // Print the separator row
-                cout << string(12, '-') << string(12 * subjectsBySemester[current->index].size(), '-') << endl;
+
+                cout << string(10 + maxWidth * subjects.size() + (subjects.size() - 1) * 3, '-') << endl;
             }
             current = current->next;
         }
@@ -341,7 +356,7 @@ public:
             }
             file.close();
         } else {
-            cerr << "Unable to open file: " << filename << endl;
+            cerr << "Невозможно открыть файл: " << filename << endl;
         }
     }
 };
@@ -354,10 +369,6 @@ private:
     StudentGrades studentGrades;
 
 public:
-    void createGrades() {
-        studentGrades.addSemester();
-    }
-
     static string getFormatDate(unsigned short day, unsigned short month, unsigned short year) {
         string dateDay = (day > 9 ? (to_string(day) + '.') : ('0' + to_string(day) + '.'));
         string dateMonth = (month > 9 ? (to_string(month) + '.') : ('0' + to_string(month) + '.'));
@@ -518,7 +529,7 @@ public:
 
     void printMainMenu() {
         string tag;
-        vector<string> keys = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"};
+        vector<string> keys = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "q"};
         cout << "Меню:" << endl;
         cout << "1. Разделить на две группы по году поступления и отсортировать" << endl;
         cout << "2. Обновить данные студента" << endl;
@@ -529,7 +540,8 @@ public:
         cout << "7. Добавить оценку" << endl;
         cout << "8. Удалить оценку" << endl;
         cout << "9. Вывести оценки" << endl;
-        cout << "0. Выход" << endl;
+        cout << "0. Узнать оценку студента по предмету" << endl;
+        cout << "q. Выход" << endl;
         cout << "Введите команду:";
         getline(cin, tag);
         if (tag.empty()) getline(cin, tag);
@@ -630,7 +642,7 @@ public:
             }
             printMainMenu();
         }
-        if (tag == "5") { // TODO пофиксить
+        if (tag == "5") {
             string id;
             cout << "Введите номер зачётной книжки студента для получения данных:";
             cin >> id;
@@ -638,7 +650,6 @@ public:
                 cout << "Такого номера зачётной книжки не существует." << endl;
             } else {
                 getStudentData(id);
-                cout << "Данные студента были получены." << endl;
             }
             printMainMenu();
         }
@@ -648,12 +659,10 @@ public:
         }
         if (tag == "7") {
             studentGrades.addGradeInteractively();
-            cout << "Оценка была добавлена." << endl;
             printMainMenu();
         }
         if (tag == "8") {
             studentGrades.removeGradeInteractively();
-            cout << "Оценка была удалена." << endl;
             printMainMenu();
         }
         if (tag == "9") {
@@ -661,6 +670,10 @@ public:
             printMainMenu();
         }
         if (tag == "0") {
+            cout << studentGrades.getGrade() << endl;
+            printMainMenu();
+        }
+        if (tag == "q") {
             exit(0);
         }
     }
@@ -679,4 +692,6 @@ int main() {
     return 0;
 }
 
-// TODO доделать проверки ввода
+// TODO шифрование
+
+// TODO оформить вывод и студентов тоже как оценки
