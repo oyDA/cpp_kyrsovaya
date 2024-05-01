@@ -159,8 +159,8 @@ public:
         }
         if (current != nullptr) {
             bool found = false;
-            for (const auto& [id, _] : current->marks[subject]) {
-                if (id == studentId) {
+            for (auto it = current->marks[subject].begin(); it != current->marks[subject].end(); ++it) {
+                if (it->first == studentId) {
                     current->addGrade(subject, studentId, grade);
                     found = true;
                     break;
@@ -211,14 +211,14 @@ public:
         int semesterIndex;
         string subject, studentId;
 
-        cout << "Введите индекс семестра (1-9): ";
+        cout << "Введите индекс семестра (1-9): " << endl;
         cin >> semesterIndex;
         cin.ignore();
 
-        cout << "Введите название предмета: ";
+        cout << "Введите название предмета: " << endl;
         getline(cin, subject);
 
-        cout << "Введите номер зачётной книжки студента: ";
+        cout << "Введите номер зачётной книжки студента: " << endl;
         getline(cin, studentId);
 
         Semester* current = head;
@@ -236,7 +236,7 @@ public:
         int semesterIndex;
         string subject, studentId, grade;
 
-        cout << "Введите индекс семестра: ";
+        cout << "Введите индекс семестра: " << endl;
         cin >> semesterIndex;
         cin.ignore();
 
@@ -245,7 +245,7 @@ public:
             return;
         }
 
-        cout << "Введите предмет: ";
+        cout << "Введите предмет: " << endl;
         getline(cin, subject);
 
         bool subjectFound = false;
@@ -261,10 +261,10 @@ public:
             return;
         }
 
-        cout << "Введите номер зачётной книжки студента: ";
+        cout << "Введите номер зачётной книжки студента: " << endl;
         getline(cin, studentId);
 
-        cout << "Введите оценку: ";
+        cout << "Введите оценку: " << endl;
         getline(cin, grade);
 
         addGrade(semesterIndex, subject, studentId, grade);
@@ -274,14 +274,14 @@ public:
         int semesterIndex;
         string subject, studentId;
 
-        cout << "Введите индекс семестра: ";
+        cout << "Введите индекс семестра:" << endl;
         cin >> semesterIndex;
         cin.ignore();
 
-        cout << "Введите предмет: ";
+        cout << "Введите предмет:" << endl;
         getline(cin, subject);
 
-        cout << "Введите номер зачётной книжки студента: ";
+        cout << "Введите номер зачётной книжки студента:" << endl;
         getline(cin, studentId);
 
         removeGrade(semesterIndex, subject, studentId);
@@ -296,8 +296,8 @@ public:
 
                 // Собираем список всех предметов в этом семестре
                 vector<string> subjects;
-                for (const auto& [subject, grades] : current->marks) {
-                    subjects.push_back(subject);
+                for (auto & mark : current->marks) {
+                    subjects.push_back(mark.first);
                 }
 
                 // Вычисляем максимальную ширину столбцов
@@ -317,22 +317,23 @@ public:
                 cout << string(10 + maxWidth * subjects.size() + (subjects.size() - 1) * 3, '-') << endl;
 
                 // Выводим данные по студентам
-                for (const auto& [studentId, index] : studentIdToIndex) {
+                for (auto & it : studentIdToIndex) {
                     bool hasGrades = false;
                     for (const auto& subject : subjects) {
-                        string grade = current->getGrade(subject, studentId);
+                        string grade = current->getGrade(subject, it.first);
                         if (!grade.empty()) {
                             hasGrades = true;
                             break;
                         }
                     }
                     if (hasGrades) {
-                        cout << "| " << setw(10) << left << studentId;
+                        cout << "| " << setw(10) << left << it.first;
                         for (const auto& subject : subjects) {
-                            string grade = current->getGrade(subject, studentId);
+                            string grade = current->getGrade(subject, it.first);
                             if (!grade.empty()) {
                                 cout << " | " << setw(maxWidth) << left << grade;
-                            } else {
+                            }
+                            else {
                                 cout << " | " << setw(maxWidth) << left << " ";
                             }
                         }
@@ -398,7 +399,7 @@ public:
         while (file) {
             Student student;
             file >> student.firstName >> student.lastName >> student.patronymic >> student.birthDate >> student.admissionYear >>
-                 student.faculty >> student.department >> student.group >> student.id >> student.sex;
+                student.faculty >> student.department >> student.group >> student.id >> student.sex;
             if (file) {
                 studentsDefault.push_back(student);
                 idSet.insert(student.id);
@@ -430,14 +431,19 @@ public:
             }
         }
 
-        const auto [minOne, maxOne] = std::minmax_element(begin(grOneDates), end(grOneDates));
-        const auto [minTwo, maxTwo] = std::minmax_element(begin(grTwoDates), end(grTwoDates));
+        auto minmaxOne = std::minmax_element(begin(grOneDates), end(grOneDates));
+        auto minOne = *minmaxOne.first;
+        auto maxOne = *minmaxOne.second;
+
+        auto minmaxTwo = std::minmax_element(begin(grTwoDates), end(grTwoDates));
+        auto minTwo = *minmaxTwo.first;
+        auto maxTwo = *minmaxTwo.second;
 
         ofstream grOne(groupOneName, ios::binary);
         ofstream grTwo(groupTwoName, ios::binary);
 
-        grOne << "Студенты " << *minOne << "-" << *maxOne << " года рождения (год поступления - " << groupOnePar << ")" << endl;
-        grTwo << "Студенты " << *minTwo << "-" << *maxTwo << " года рождения" << endl;
+        grOne << "Студенты " << minOne << "-" << maxOne << " года рождения (год поступления - " << groupOnePar << ")" << endl;
+        grTwo << "Студенты " << minTwo << "-" << maxTwo << " года рождения" << endl;
 
         grOne.close();
         grTwo.close();
@@ -557,36 +563,36 @@ public:
         if (tag == "2") {
             unsigned short admissionYear, birthDay, birthMonth, birthYear;
             string id, firstName, lastName, patronymic, birthDate, faculty, department, group, sex, newId;
-            cout << "Введите номер зачётной книжки студента:";
+            cout << "Введите номер зачётной книжки студента:" << endl;
             cin >> id;
             if (!idSet.count(id)) {
                 cout << "Такого номера зачётной книжки не существует." << endl;
             } else {
-                cout << "Введите новое имя:";
+                cout << "Введите новое имя:" << endl;
                 cin >> firstName;
-                cout << "Введите новую фамилию:";
+                cout << "Введите новую фамилию:" << endl;
                 cin >> lastName;
-                cout << "Введите новое отчество:";
+                cout << "Введите новое отчество:" << endl;
                 cin >> patronymic;
                 cout << "Введите новую дату рождения:" << endl;
-                cout << "День:";
+                cout << "День:" << endl;
                 cin >> birthDay;
-                cout << "Месяц:";
+                cout << "Месяц:" << endl;
                 cin >> birthMonth;
-                cout << "Год:";
+                cout << "Год:" << endl;
                 cin >> birthYear;
                 birthDate = getFormatDate(birthDay, birthMonth, birthYear);
-                cout << "Введите новый год поступления:";
+                cout << "Введите новый год поступления:" << endl;
                 cin >> admissionYear;
-                cout << "Введите новый факультет/институт:";
+                cout << "Введите новый факультет/институт:" << endl;
                 cin >> faculty;
-                cout << "Введите новую кафедру:";
+                cout << "Введите новую кафедру:" << endl;
                 cin >> department;
-                cout << "Введите новую группу:";
+                cout << "Введите новую группу:" << endl;
                 cin >> group;
-                cout << "Введите новый пол:";
+                cout << "Введите новый пол:" << endl;
                 cin >> sex;
-                cout << "Введите новый номер зачётной книжки:";
+                cout << "Введите новый номер зачётной книжки:" << endl;
                 cin >> newId;
                 updateStudentData(firstName, lastName, patronymic, birthDate, admissionYear, faculty, department, group, id, sex, newId);
                 cout << "Данные студента были обновлены." << endl;
@@ -596,34 +602,34 @@ public:
         if (tag == "3") {
             unsigned short admissionYear, birthDay, birthMonth, birthYear;
             string id, firstName, lastName, patronymic, birthDate, faculty, department, group, sex;
-            cout << "Введите номер зачётной книжки студента:";
+            cout << "Введите номер зачётной книжки студента:" << endl;
             cin >> id;
             if (idSet.count(id)) {
                 cout << "Такой номер зачётной книжки уже существует." << endl;
             } else {
-                cout << "Введите имя студента:";
+                cout << "Введите имя студента:" << endl;
                 cin >> firstName;
-                cout << "Введите фамилию студента:";
+                cout << "Введите фамилию студента:" << endl;
                 cin >> lastName;
-                cout << "Введите отчество студента:";
+                cout << "Введите отчество студента:" << endl;
                 cin >> patronymic;
                 cout << "Введите дату рождения студента:" << endl;
-                cout << "День:";
+                cout << "День:" << endl;
                 cin >> birthDay;
-                cout << "Месяц:";
+                cout << "Месяц:" << endl;
                 cin >> birthMonth;
-                cout << "Год:";
+                cout << "Год:" << endl;
                 cin >> birthYear;
                 birthDate = getFormatDate(birthDay, birthMonth, birthYear);
-                cout << "Введите год поступления студента:";
+                cout << "Введите год поступления студента:" << endl;
                 cin >> admissionYear;
-                cout << "Введите факультет/институт студента:";
+                cout << "Введите факультет/институт студента:" << endl;
                 cin >> faculty;
-                cout << "Введите кафедру студента:";
+                cout << "Введите кафедру студента:" << endl;
                 cin >> department;
-                cout << "Введите группу студента:";
+                cout << "Введите группу студента:" << endl;
                 cin >> group;
-                cout << "Введите пол студента:";
+                cout << "Введите пол студента:" << endl;
                 cin >> sex;
                 addStudent(firstName, lastName, patronymic, birthDate, admissionYear, faculty, department, group, id, sex);
                 cout << "Данные студента был добавлен." << endl;
@@ -632,7 +638,7 @@ public:
         }
         if (tag == "4") {
             string id;
-            cout << "Введите номер зачётной книжки студента для удаления:";
+            cout << "Введите номер зачётной книжки студента для удаления:" << endl;
             cin >> id;
             if (!idSet.count(id)) {
                 cout << "Такого номера зачётной книжки не существует." << endl;
@@ -644,7 +650,7 @@ public:
         }
         if (tag == "5") {
             string id;
-            cout << "Введите номер зачётной книжки студента для получения данных:";
+            cout << "Введите номер зачётной книжки студента для получения данных:" << endl;
             cin >> id;
             if (!idSet.count(id)) {
                 cout << "Такого номера зачётной книжки не существует." << endl;
@@ -695,3 +701,7 @@ int main() {
 // TODO шифрование
 
 // TODO оформить вывод и студентов тоже как оценки
+
+// TODO добавить в cout везде endl чтобы ровно
+
+// TODO записать бинарник при помощи текстового и удалить текстовый
