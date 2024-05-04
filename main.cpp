@@ -76,16 +76,16 @@ map<string, string> subjectsInterpretations{
 
 class Student {
 public:
-    string firstName;
-    string lastName;
-    string patronymic;
-    string birthDate;
+    char firstName[51];
+    char lastName[51];
+    char patronymic[51];
+    char birthDate[11];
     unsigned short admissionYear;
-    string faculty;
-    string department;
-    string group;
-    string id;
-    string sex;
+    char faculty[6];
+    char department[51];
+    char group[12];
+    char id[11];
+    char sex[20];
 };
 
 class Semester {
@@ -145,6 +145,25 @@ public:
         }
     }
 
+    void saveGradesToFile(const string& filename) {
+        ofstream file(filename, ios::binary | ios::trunc);
+
+        Semester* current = head;
+        while (current != nullptr) {
+            for (const auto& [subject, grades] : current->marks) {
+                for (const auto& [studentId, grade] : grades) {
+                    file.write(reinterpret_cast<const char*>(&current->index), sizeof(int));
+                    file.write(subject.c_str(), subject.length() + 1);
+                    file.write(studentId.c_str(), studentId.length() + 1);
+                    file.write(grade.c_str(), grade.length() + 1);
+                }
+            }
+            current = current->next;
+        }
+
+        file.close();
+    }
+
     void addStudent(const string& studentId) {
         if (studentIdToIndex.count(studentId)) {
             return;
@@ -158,17 +177,7 @@ public:
             current = current->next;
         }
         if (current != nullptr) {
-            bool found = false;
-            for (auto it = current->marks[subject].begin(); it != current->marks[subject].end(); ++it) {
-                if (it->first == studentId) {
-                    current->addGrade(subject, studentId, grade);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                current->addGrade(subject, studentId, grade);
-            }
+            current->addGrade(subject, studentId, grade);
             for (const auto& subjectInSemester : semesterSubjects[semesterIndex - 1]) {
                 if (subjectsInterpretations[subjectInSemester] == subject) {
                     subjectsBySemester[semesterIndex].insert(subjectInSemester);
@@ -201,7 +210,24 @@ public:
             current = current->next;
         }
         if (current != nullptr) {
-            current->removeGrade(subject, studentId);
+            bool found = false;
+            for (auto it = current->marks.begin(); it != current->marks.end(); ++it) {
+                if (subjectsInterpretations[it->first] == subject && it->second.count(studentId)) {
+                    it->second.erase(studentId);
+                    if (it->second.empty()) {
+                        current->marks.erase(it);
+                        auto subjectIt = subjectsBySemester[semesterIndex].find(it->first);
+                        if (subjectIt != subjectsBySemester[semesterIndex].end()) {
+                            subjectsBySemester[semesterIndex].erase(subjectIt);
+                        }
+                    }
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                cout << "Оценка для студента " << studentId << " по предмету " << subject << " не найдена." << endl;
+            }
         } else {
             cout << "Семестр не найден: " << semesterIndex << endl;
         }
@@ -232,9 +258,9 @@ public:
         return "";
     }
 
-    void addGradeInteractively() {
+    void addGradeInteractively(const string& studentId) {
         int semesterIndex;
-        string subject, studentId, grade;
+        string subject, grade;
 
         cout << "Введите индекс семестра: " << endl;
         cin >> semesterIndex;
@@ -260,9 +286,6 @@ public:
             cout << "Предмет '" << subject << "' не является действительным для семестра " << semesterIndex << ". Пожалуйста, попробуйте снова." << endl;
             return;
         }
-
-        cout << "Введите номер зачётной книжки студента: " << endl;
-        getline(cin, studentId);
 
         cout << "Введите оценку: " << endl;
         getline(cin, grade);
@@ -291,7 +314,7 @@ public:
         Semester* current = head;
         while (current != nullptr) {
             if (current->hasGrades()) {
-                cout << "Оценки за семестр: " << current->index << endl;
+                cout << "\nОценки за семестр: " << current->index << endl;
                 cout << endl;
 
                 // Собираем список всех предметов в этом семестре
@@ -312,9 +335,11 @@ public:
                 for (const auto& subject : subjects) {
                     cout << " | " << setw(maxWidth) << left << subjectsInterpretations[subject];
                 }
-                cout << endl;
+                cout << " |" << endl;
 
-                cout << string(10 + maxWidth * subjects.size() + (subjects.size() - 1) * 3, '-') << endl;
+                // Вычисляем ширину первой строки
+                int firstLineWidth = 10 + maxWidth * subjects.size() + (subjects.size()) * 3;
+                cout << string(firstLineWidth + 4, '-') << endl;
 
                 // Выводим данные по студентам
                 for (auto & it : studentIdToIndex) {
@@ -337,11 +362,11 @@ public:
                                 cout << " | " << setw(maxWidth) << left << " ";
                             }
                         }
-                        cout << endl;
+                        cout << " |" << endl;
                     }
                 }
 
-                cout << string(10 + maxWidth * subjects.size() + (subjects.size() - 1) * 3, '-') << endl;
+                cout << string(firstLineWidth + 4, '-') << endl;
             }
             current = current->next;
         }
@@ -352,14 +377,24 @@ public:
         if (file.is_open()) {
             int semesterIndex;
             string subject, studentId, grade;
-            while (file >> semesterIndex >> subject >> studentId >> grade) {
+
+            while (true) {
+                file.read(reinterpret_cast<char*>(&semesterIndex), sizeof(int));
+                if (file.eof()) break;
+
+                getline(file, subject, '\0');
+                getline(file, studentId, '\0');
+                getline(file, grade, '\0');
+
                 addGrade(semesterIndex, subject, studentId, grade);
             }
+
             file.close();
         } else {
             cerr << "Невозможно открыть файл: " << filename << endl;
         }
     }
+
 };
 
 class StudentManager {
@@ -377,37 +412,57 @@ public:
         return date;
     }
 
-    static void saveToFile(const string& filename, vector<Student>& studentsVector) {
-        ofstream file(filename, ios::binary | ios::app);
+    static int saveToFile(const std::string& filename, std::vector<Student>& studentsVector, bool checker) {
+        if (checker == 1) {
+            std::ofstream file(filename, ios::binary | ios::trunc);
 
-        for (const auto &student: studentsVector) {
-            file << student.firstName << " " << student.lastName << " " << student.patronymic << " "
-                 << student.birthDate << " " <<
-                 student.admissionYear << " " << student.faculty << " " << student.department << " " << student.group <<
-                 " " << student.id << " " << student.sex << endl;
+            for (const auto& student : studentsVector) {
+                file.write(reinterpret_cast<const char*>(&student), sizeof(Student));
+            }
+
+            file.close();
+            return 0;
+        } else if (checker == 0) {
+            std::ofstream file(filename, ios::binary | ios::app);
+
+            for (const auto& student : studentsVector) {
+                file.write(reinterpret_cast<const char*>(&student), sizeof(Student));
+            }
+
+            file.close();
+            return 0;
         }
+        return 1;
     }
 
-    static void sortStudentsById(vector<Student> &studentsVector) {
-        sort(studentsVector.begin(), studentsVector.end(),
-             [](const Student &a, const Student &b) { return a.id < b.id; });
+    static bool compareStudentsById(const Student& a, const Student& b) {
+        std::string aId(a.id, 12);
+        std::string bId(b.id, 12);
+        return aId < bId;
     }
 
-    void readStudentsFromFile(const string& filename) {
+    static void sortStudentsById(vector<Student>& studentsVector) {
+        std::sort(studentsVector.begin(), studentsVector.end(), compareStudentsById);
+    }
+
+    int readStudentsFromFile(const string& filename) {
         ifstream file(filename, ios::binary);
 
-        while (file) {
-            Student student;
-            file >> student.firstName >> student.lastName >> student.patronymic >> student.birthDate >> student.admissionYear >>
-                student.faculty >> student.department >> student.group >> student.id >> student.sex;
-            if (file) {
-                studentsDefault.push_back(student);
-                idSet.insert(student.id);
-                studentGrades.addStudent(student.id);
-            }
+        if (!file.is_open()) {
+            std::cerr << "Не удалось открыть файл students.bin" << std::endl;
+            return 1;
+        }
+
+        Student student;
+
+        while (file.read(reinterpret_cast<char*>(&student), sizeof(Student))) {
+            studentsDefault.push_back(student);
+            idSet.insert(student.id);
+            studentGrades.addStudent(student.id);
         }
 
         file.close();
+        return 0;
     }
 
     void loadGradesFromFile(const string& filename) {
@@ -418,16 +473,16 @@ public:
         vector<int> grOneDates;
         vector<int> grTwoDates;
         groupOnePar = studentsDefault.front().admissionYear;
-        ifstream groupOne(groupOneName, ios::binary);
-        ifstream groupTwo(groupTwoName, ios::binary);
+        ofstream grOne(groupOneName, ios::binary | ios::trunc);
+        ofstream grTwo(groupTwoName, ios::binary | ios::trunc);
 
         for (auto& student : studentsDefault) {
             if (student.admissionYear == groupOnePar) {
                 studentsOne.push_back(student);
-                grOneDates.push_back(stoi(student.birthDate.substr(6, 9)));
+                grOneDates.push_back(atoi(student.birthDate + 6));
             } else {
                 studentsTwo.push_back(student);
-                grTwoDates.push_back(stoi(student.birthDate.substr(6, 9)));
+                grTwoDates.push_back(atoi(student.birthDate + 6));
             }
         }
 
@@ -439,23 +494,22 @@ public:
         auto minTwo = *minmaxTwo.first;
         auto maxTwo = *minmaxTwo.second;
 
-        ofstream grOne(groupOneName, ios::binary);
-        ofstream grTwo(groupTwoName, ios::binary);
-
-        grOne << "Студенты " << minOne << "-" << maxOne << " года рождения (год поступления - " << groupOnePar << ")" << endl;
-        grTwo << "Студенты " << minTwo << "-" << maxTwo << " года рождения" << endl;
-
-        grOne.close();
-        grTwo.close();
+        grOne << "Студенты " << minOne << "-" << maxOne << " года рождения (год поступления - " << groupOnePar << ")\n";
+        grTwo << "Студенты " << minTwo << "-" << maxTwo << " года рождения\n";
 
         sortStudentsById(studentsOne);
         sortStudentsById(studentsTwo);
 
-        saveToFile(groupOneName, studentsOne);
-        saveToFile(groupTwoName, studentsTwo);
+        saveToFile(groupOneName, studentsOne, 0);
+        saveToFile(groupTwoName, studentsTwo, 0);
 
-        groupOne.close();
-        groupTwo.close();
+        grOne.close();
+        grTwo.close();
+
+        cout << "\nПервая группа с " << groupOnePar << " годом поступления:\n\n";
+        showStudents(studentsOne);
+        cout << "\nВторая группа:\n\n";
+        showStudents(studentsTwo);
 
         studentsOne.clear();
         studentsTwo.clear();
@@ -464,22 +518,24 @@ public:
     }
 
     int updateStudentData(const string& firstName, const string& lastName,
-                          const string& patronymic, const string& birthDate, unsigned short admissionYear, const string& faculty,
-                          const string& department, const string& group, const string& id, const string& sex, const string& newId) {
+                                          const string& patronymic, const string& birthDate, unsigned short admissionYear, const string& faculty,
+                                          const string& department, const string& group, const string& id, const string& sex, const string& newId) {
         for (auto& student : studentsDefault) {
-            if (student.id == id) {
-                student.firstName = firstName;
-                student.lastName = lastName;
-                student.patronymic = patronymic;
-                student.birthDate = birthDate;
+            if (strcmp(student.id, id.c_str()) == 0) {
+                strncpy(student.firstName, firstName.c_str(), sizeof(student.firstName) - 1);
+                strncpy(student.lastName, lastName.c_str(), sizeof(student.lastName) - 1);
+                strncpy(student.patronymic, patronymic.c_str(), sizeof(student.patronymic) - 1);
+                strncpy(student.birthDate, birthDate.c_str(), sizeof(student.birthDate) - 1);
                 student.admissionYear = admissionYear;
-                student.faculty = faculty;
-                student.department = department;
-                student.group = group;
-                student.sex = sex;
-                student.id = newId;
-                idSet.insert(newId);
-                idSet.erase(id);
+                strncpy(student.faculty, faculty.c_str(), sizeof(student.faculty) - 1);
+                strncpy(student.department, department.c_str(), sizeof(student.department) - 1);
+                strncpy(student.group, group.c_str(), sizeof(student.group) - 1);
+                strncpy(student.sex, sex.c_str(), sizeof(student.sex) - 1);
+                strncpy(student.id, newId.c_str(), sizeof(student.id) - 1);
+                if (newId != id) {
+                    idSet.insert(newId);
+                    idSet.erase(id);
+                }
                 return 0;
             }
         }
@@ -505,9 +561,19 @@ public:
     }
 
     void addStudent(const string& firstName, const string& lastName, const string& patronymic, const string& birthDate,
-                    unsigned short admissionYear, const string& faculty, const string& department, const string& group,
-                    const string& id, const string& sex) {
-        Student newStudent = {firstName, lastName, patronymic, birthDate, admissionYear, faculty, department, group, id, sex};
+                                    unsigned short admissionYear, const string& faculty, const string& department, const string& group,
+                                    const string& id, const string& sex) {
+        Student newStudent;
+        strncpy(newStudent.firstName, firstName.c_str(), sizeof(newStudent.firstName) - 1);
+        strncpy(newStudent.lastName, lastName.c_str(), sizeof(newStudent.lastName) - 1);
+        strncpy(newStudent.patronymic, patronymic.c_str(), sizeof(newStudent.patronymic) - 1);
+        strncpy(newStudent.birthDate, birthDate.c_str(), sizeof(newStudent.birthDate) - 1);
+        newStudent.admissionYear = admissionYear;
+        strncpy(newStudent.faculty, faculty.c_str(), sizeof(newStudent.faculty) - 1);
+        strncpy(newStudent.department, department.c_str(), sizeof(newStudent.department) - 1);
+        strncpy(newStudent.group, group.c_str(), sizeof(newStudent.group) - 1);
+        strncpy(newStudent.id, id.c_str(), sizeof(newStudent.id) - 1);
+        strncpy(newStudent.sex, sex.c_str(), sizeof(newStudent.sex) - 1);
         studentsDefault.push_back(newStudent);
         idSet.insert(newStudent.id);
         studentGrades.addStudent(newStudent.id);
@@ -520,16 +586,62 @@ public:
                           [id](const Student& student) { return student.id == id; }),
                 studentsDefault.end()
         );
+        idSet.erase(id);
     }
 
-    void showStudents() const {
-        int counter = 1;
-        for (const auto& student : studentsDefault) {
-            cout << counter << ". ФИО: " << student.firstName << " " << student.lastName << " " << student.patronymic
-                 << ", Дата рождения: " << student.birthDate << ", Год поступления: " << student.admissionYear << ", Институт: "
-                 << student.faculty << ", Кафедра: " << student.department << ", Группа: " << student.group
-                 << ", Номер зачётной книжки: " << student.id << ", Пол: " << student.sex << endl;
-            counter += 1;
+    void showStudents(const vector<Student>& vectorStudent) const {
+        // Собираем список всех параметров студента
+        vector<string> parameters = {"Имя", "Фамилия", "Отчество", "Дата рождения", "Год поступления", "Институт", "Кафедра", "Группа", "Номер", "Пол"};
+
+        // Вычисляем максимальную ширину столбцов
+        int maxWidth = 15;
+        for (const auto& param : parameters) {
+            maxWidth = max(maxWidth, static_cast<int>(param.length()));
+        }
+        maxWidth = min(maxWidth, 20);
+
+        // Выводим данные по студентам построчно, по 10 студентов в каждой строке
+        for (size_t i = 0; i < vectorStudent.size(); i += 10) {
+            // Выводим заголовок таблицы
+            for (const auto& param : parameters) {
+                cout << "| " << setw(maxWidth) << left << param;
+            }
+            cout << "|" << endl;
+
+            int totalWidth = maxWidth * parameters.size() + (parameters.size() - 1) * 3 + 1; // Общая ширина таблицы
+            cout << string(totalWidth - 7, '-') << endl;
+
+            // Выводим данные по студентам
+            for (size_t j = i; j < min(i + 10, vectorStudent.size()); ++j) {
+                const auto& student = vectorStudent[j];
+                for (const auto& param : parameters) {
+                    if (param == "Имя") {
+                        cout << "| " << setw(maxWidth) << left << student.firstName;
+                    } else if (param == "Фамилия") {
+                        cout << "| " << setw(maxWidth) << left << student.lastName;
+                    } else if (param == "Отчество") {
+                        cout << "| " << setw(maxWidth) << left << student.patronymic;
+                    } else if (param == "Дата рождения") {
+                        cout << "| " << setw(maxWidth) << left << student.birthDate;
+                    } else if (param == "Год поступления") {
+                        cout << "| " << setw(maxWidth) << left << student.admissionYear;
+                    } else if (param == "Институт") {
+                        cout << "| " << setw(maxWidth) << left << student.faculty;
+                    } else if (param == "Кафедра") {
+                        cout << "| " << setw(maxWidth) << left << student.department;
+                    } else if (param == "Группа") {
+                        cout << "| " << setw(maxWidth) << left << student.group;
+                    } else if (param == "Номер") {
+                        cout << "| " << setw(maxWidth) << left << student.id;
+                    } else if (param == "Пол") {
+                        cout << "| " << setw(maxWidth) << left << student.sex;
+                    }
+                }
+                cout << "|" << endl;
+            }
+
+            cout << string(totalWidth - 7, '-') << endl;
+            cout << endl; // Добавляем пустую строку между блоками
         }
     }
 
@@ -566,7 +678,7 @@ public:
             cout << "Введите номер зачётной книжки студента:" << endl;
             cin >> id;
             if (!idSet.count(id)) {
-                cout << "Такого номера зачётной книжки не существует." << endl;
+                cerr << "Такого номера зачётной книжки не существует." << endl;
             } else {
                 cout << "Введите новое имя:" << endl;
                 cin >> firstName;
@@ -605,7 +717,7 @@ public:
             cout << "Введите номер зачётной книжки студента:" << endl;
             cin >> id;
             if (idSet.count(id)) {
-                cout << "Такой номер зачётной книжки уже существует." << endl;
+                cerr << "Такой номер зачётной книжки уже существует." << endl;
             } else {
                 cout << "Введите имя студента:" << endl;
                 cin >> firstName;
@@ -632,7 +744,7 @@ public:
                 cout << "Введите пол студента:" << endl;
                 cin >> sex;
                 addStudent(firstName, lastName, patronymic, birthDate, admissionYear, faculty, department, group, id, sex);
-                cout << "Данные студента был добавлен." << endl;
+                cout << "Данные студента были добавлены." << endl;
             }
             printMainMenu();
         }
@@ -641,7 +753,7 @@ public:
             cout << "Введите номер зачётной книжки студента для удаления:" << endl;
             cin >> id;
             if (!idSet.count(id)) {
-                cout << "Такого номера зачётной книжки не существует." << endl;
+                cerr << "Такого номера зачётной книжки не существует." << endl;
             } else {
                 deleteStudent(id);
                 cout << "Данные студента были удалены." << endl;
@@ -653,18 +765,25 @@ public:
             cout << "Введите номер зачётной книжки студента для получения данных:" << endl;
             cin >> id;
             if (!idSet.count(id)) {
-                cout << "Такого номера зачётной книжки не существует." << endl;
+                cerr << "Такого номера зачётной книжки не существует." << endl;
             } else {
                 getStudentData(id);
             }
             printMainMenu();
         }
         if (tag == "6") {
-            showStudents();
+            showStudents(studentsDefault);
             printMainMenu();
         }
         if (tag == "7") {
-            studentGrades.addGradeInteractively();
+            string id;
+            cout << "Введите номер зачётной книжки:" << endl;
+            getline(cin, id);
+            if (!idSet.count(id)) {
+                cerr << "Такого номера зачётной книжки не существует." << endl;
+            } else {
+                studentGrades.addGradeInteractively(id);
+            }
             printMainMenu();
         }
         if (tag == "8") {
@@ -680,6 +799,8 @@ public:
             printMainMenu();
         }
         if (tag == "q") {
+            saveToFile("new_students.bin", studentsDefault, 1);
+            studentGrades.saveGradesToFile("new_grades.bin");
             exit(0);
         }
     }
@@ -699,9 +820,3 @@ int main() {
 }
 
 // TODO шифрование
-
-// TODO оформить вывод и студентов тоже как оценки
-
-// TODO добавить в cout везде endl чтобы ровно
-
-// TODO записать бинарник при помощи текстового и удалить текстовый
