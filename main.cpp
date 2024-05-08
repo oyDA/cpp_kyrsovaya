@@ -10,19 +10,21 @@
 #include <unordered_map>
 #include <list>
 #include <unordered_set>
+#include <cstdlib>
+#include <ctime>
 
 using namespace std;
 
 vector <vector <string>> semesterSubjects{
-        /* 1 */{"English", "History", "IT", "LineAlg", "MathAn", "PE", "Physics", "ProgLang", "Russian", "VPD"},
-        /* 2 */{"DiscMath", "Economics", "English", "History", "LineAlg", "MathAn", "PE", "Physics", "ProgLang"},
-        /* 3 */{"AI", "DiffEq", "ElTech", "English", "Law", "LineAlg", "MathAn", "MathLog", "PE", "SocPsycho"},
-        /* 4 */{"BigData", "BusModel", "ElTech", "English", "OS", "OrgEVM", "PE", "Phyl", "TeorVer", "UgrAndUya"},
-        /* 5 */{"ASModel", "BioSys", "BusModel", "Crypto", "Networks", "TeorDB", "UgrAndUya"},
-        /* 6 */{"BZD", "BioSys", "Crypto", "DBSafety", "PAMethods", "TechSafeMethods", "VSSafety"},
-        /* 7 */{"DBSafety", "PAMethods", "PaySafety", "TeorRel"},
-        /* 8 */{"ISAdmin", "InfProtection", "MakeAS", "MarkIB", "PAMethods"},
-        /* 9 */{"ASSafety", "DiagCZ", "MakeAS", "ManageIB", "ProtectGos"},
+        {"English", "History", "IT", "LineAlg", "MathAn", "PE", "Physics", "ProgLang", "Russian", "VPD"},
+        {"DiscMath", "Economics", "English", "History", "LineAlg", "MathAn", "PE", "Physics", "ProgLang"},
+        {"AI", "DiffEq", "ElTech", "English", "Law", "LineAlg", "MathAn", "MathLog", "PE", "SocPsycho"},
+        {"BigData", "BusModel", "ElTech", "English", "OS", "OrgEVM", "PE", "Phyl", "TeorVer", "UgrAndUya"},
+        {"ASModel", "BioSys", "BusModel", "Crypto", "Networks", "TeorDB", "UgrAndUya"},
+        {"BZD", "BioSys", "Crypto", "DBSafety", "PAMethods", "TechSafeMethods", "VSSafety"},
+        {"DBSafety", "PAMethods", "PaySafety", "TeorRel"},
+        {"ISAdmin", "InfProtection", "MakeAS", "MarkIB", "PAMethods"},
+        {"ASSafety", "DiagCZ", "MakeAS", "ManageIB", "ProtectGos"},
 };
 
 map<string, string> subjectsInterpretations{
@@ -74,6 +76,52 @@ map<string, string> subjectsInterpretations{
         pair <string, string>{"ASSafety", "Безопасность АС"},
 };
 
+char* generatePassword() {
+    srand(time(NULL));
+    char* pass = new char[64];
+    for (int i = 0; i < 64; ++i) {
+        switch (rand() % 3) {
+            case 0:
+                pass[i] = rand() % 10 + '0';
+                break;
+            case 1:
+                pass[i] = rand() % 26 + 'A';
+                break;
+            case 2:
+                pass[i] = rand() % 26 + 'a';
+                break;
+        }
+    }
+
+    ofstream keyFile("key.txt");
+    if (keyFile.is_open()) {
+        keyFile.write(pass, 64);
+        keyFile.close();
+    } else {
+        cerr << "Error creating key.txt" << endl;
+    }
+
+    return pass;
+}
+
+bool encryptFile(const string& inputFile, const string& outputFile, const char* password) {
+    string command = "OpenSSL-Win64\\bin\\openssl.exe enc -aes-256-cbc -salt -iter 10000 -in " + inputFile + " -out " + outputFile + " -pass pass:";
+    command += password;
+    return system(command.c_str()) == 0;
+}
+
+bool decryptFile(const string& inputFile, const string& outputFile, const char* password) {
+    string command = "OpenSSL-Win64\\bin\\openssl.exe enc -aes-256-cbc -d -iter 10000 -in " + inputFile + " -out " + outputFile + " -pass pass:";
+    command += password;
+    int result = system(command.c_str());
+    if (result != 0) {
+        cout << "Error decrypting " << inputFile << endl;
+        return false;
+    }
+    return true;
+}
+
+
 class Student {
 public:
     char firstName[51];
@@ -98,15 +146,6 @@ public:
 
     void addGrade(const string& subject, const string& studentId, const string& grade) {
         marks[subject][studentId] = grade;
-    }
-
-    void removeGrade(const string& subject, const string& studentId) {
-        if (marks.count(subject) && marks[subject].count(studentId)) {
-            marks[subject].erase(studentId);
-            if (marks[subject].empty()) {
-                marks.erase(subject);
-            }
-        }
     }
 
     string getGrade(const string& subject, const string& studentId) {
@@ -317,31 +356,26 @@ public:
                 cout << "\nОценки за семестр: " << current->index << endl;
                 cout << endl;
 
-                // Собираем список всех предметов в этом семестре
                 vector<string> subjects;
                 for (auto & mark : current->marks) {
                     subjects.push_back(mark.first);
                 }
 
-                // Вычисляем максимальную ширину столбцов
                 int maxWidth = 10;
                 for (const auto& subject : subjects) {
                     maxWidth = max(maxWidth, static_cast<int>(subjectsInterpretations[subject].length()));
                 }
                 maxWidth = max(maxWidth, 10);
 
-                // Выводим заголовок таблицы
                 cout << "| " << setw(10) << left << "Номер";
                 for (const auto& subject : subjects) {
                     cout << " | " << setw(maxWidth) << left << subjectsInterpretations[subject];
                 }
                 cout << " |" << endl;
 
-                // Вычисляем ширину первой строки
                 int firstLineWidth = 10 + maxWidth * subjects.size() + (subjects.size()) * 3;
                 cout << string(firstLineWidth + 4, '-') << endl;
 
-                // Выводим данные по студентам
                 for (auto & it : studentIdToIndex) {
                     bool hasGrades = false;
                     for (const auto& subject : subjects) {
@@ -412,9 +446,9 @@ public:
         return date;
     }
 
-    static int saveToFile(const std::string& filename, std::vector<Student>& studentsVector, bool checker) {
+    static int saveToFile(const string& filename, vector<Student>& studentsVector, bool checker) {
         if (checker == 1) {
-            std::ofstream file(filename, ios::binary | ios::trunc);
+            ofstream file(filename, ios::binary | ios::trunc);
 
             for (const auto& student : studentsVector) {
                 file.write(reinterpret_cast<const char*>(&student), sizeof(Student));
@@ -423,7 +457,7 @@ public:
             file.close();
             return 0;
         } else if (checker == 0) {
-            std::ofstream file(filename, ios::binary | ios::app);
+            ofstream file(filename, ios::binary | ios::app);
 
             for (const auto& student : studentsVector) {
                 file.write(reinterpret_cast<const char*>(&student), sizeof(Student));
@@ -436,20 +470,29 @@ public:
     }
 
     static bool compareStudentsById(const Student& a, const Student& b) {
-        std::string aId(a.id, 12);
-        std::string bId(b.id, 12);
+        string aId(a.id, 12);
+        string bId(b.id, 12);
         return aId < bId;
     }
 
     static void sortStudentsById(vector<Student>& studentsVector) {
-        std::sort(studentsVector.begin(), studentsVector.end(), compareStudentsById);
+        sort(studentsVector.begin(), studentsVector.end(), compareStudentsById);
     }
 
-    int readStudentsFromFile(const string& filename) {
-        ifstream file(filename, ios::binary);
+    int readStudentsFromFile(const string& filename, const char* password) {
+        string decryptedFile = "students.bin.dec";
+        if (!decryptFile(filename, decryptedFile, password)) {
+            cerr << "Error decrypting " << filename << endl;
+            return 1;
+        }
+
+        ifstream file(decryptedFile, ios::binary);
 
         if (!file.is_open()) {
-            std::cerr << "Не удалось открыть файл students.bin" << std::endl;
+            cerr << "Не удалось открыть файл " << decryptedFile << endl;
+            if (remove(decryptedFile.c_str()) != 0) {
+                cerr << "Error deleting " << decryptedFile << endl;
+            }
             return 1;
         }
 
@@ -462,11 +505,26 @@ public:
         }
 
         file.close();
+
+        if (remove(decryptedFile.c_str()) != 0) {
+            cerr << "Error deleting " << decryptedFile << endl;
+        }
+
         return 0;
     }
 
-    void loadGradesFromFile(const string& filename) {
-        studentGrades.loadFromFile(filename);
+    void loadGradesFromFile(const string& filename, const char* password) {
+        string decryptedFile = "grades.bin.dec";
+        if (!decryptFile(filename, decryptedFile, password)) {
+            cerr << "Error decrypting " << filename << endl;
+            return;
+        }
+
+        studentGrades.loadFromFile(decryptedFile);
+
+        if (remove(decryptedFile.c_str()) != 0) {
+            cerr << "Error deleting " << decryptedFile << endl;
+        }
     }
 
     void splitStudents(const string& groupOneName, const string& groupTwoName) {
@@ -486,11 +544,11 @@ public:
             }
         }
 
-        auto minmaxOne = std::minmax_element(begin(grOneDates), end(grOneDates));
+        auto minmaxOne = minmax_element(begin(grOneDates), end(grOneDates));
         auto minOne = *minmaxOne.first;
         auto maxOne = *minmaxOne.second;
 
-        auto minmaxTwo = std::minmax_element(begin(grTwoDates), end(grTwoDates));
+        auto minmaxTwo = minmax_element(begin(grTwoDates), end(grTwoDates));
         auto minTwo = *minmaxTwo.first;
         auto maxTwo = *minmaxTwo.second;
 
@@ -500,11 +558,32 @@ public:
         sortStudentsById(studentsOne);
         sortStudentsById(studentsTwo);
 
-        saveToFile(groupOneName, studentsOne, 0);
-        saveToFile(groupTwoName, studentsTwo, 0);
+        saveToFile("groupOne.bin", studentsOne, 0);
+        saveToFile("groupTwo.bin", studentsTwo, 0);
 
-        grOne.close();
-        grTwo.close();
+        char* password = generatePassword();
+
+        if (!encryptFile(groupOneName, "groupOne.bin.enc", password)) {
+            cout << "Error encrypting " << groupOneName << endl;
+            delete[] password;
+            return;
+        }
+
+        if (remove(groupOneName.c_str()) != 0) {
+            cerr << "Error deleting " << groupOneName << endl;
+        }
+
+        if (!encryptFile(groupTwoName, "groupTwo.bin.enc", password)) {
+            cout << "Error encrypting " << groupTwoName << endl;
+            delete[] password;
+            return;
+        }
+
+        if (remove(groupTwoName.c_str()) != 0) {
+            cerr << "Error deleting " << groupTwoName << endl;
+        }
+
+        delete[] password;
 
         cout << "\nПервая группа с " << groupOnePar << " годом поступления:\n\n";
         showStudents(studentsOne);
@@ -560,9 +639,9 @@ public:
         }
     }
 
-    void addStudent(const string& firstName, const string& lastName, const string& patronymic, const string& birthDate,
-                                    unsigned short admissionYear, const string& faculty, const string& department, const string& group,
-                                    const string& id, const string& sex) {
+    void addStudent(const string& lastName, const string& firstName, const string& patronymic, const string& birthDate,
+                    unsigned short admissionYear, const string& faculty, const string& department, const string& group,
+                    const string& id, const string& sex) {
         Student newStudent;
         strncpy(newStudent.firstName, firstName.c_str(), sizeof(newStudent.firstName) - 1);
         strncpy(newStudent.lastName, lastName.c_str(), sizeof(newStudent.lastName) - 1);
@@ -581,37 +660,35 @@ public:
     }
 
     void deleteStudent(const string& id) {
-        studentsDefault.erase(
-                remove_if(studentsDefault.begin(), studentsDefault.end(),
-                          [id](const Student& student) { return student.id == id; }),
-                studentsDefault.end()
-        );
-        idSet.erase(id);
+        auto it = find_if(studentsDefault.begin(), studentsDefault.end(), [&](const Student& student) {
+            return student.id == id;
+        });
+        if (it != studentsDefault.end()) {
+            studentsDefault.erase(it);
+            idSet.erase(id);
+        } else {
+            cout << "Студент с номером зачетной книжки " << id << " не найден." << endl;
+        }
     }
 
-    void showStudents(const vector<Student>& vectorStudent) const {
-        // Собираем список всех параметров студента
+    static void showStudents(const vector<Student>& vectorStudent) {
         vector<string> parameters = {"Имя", "Фамилия", "Отчество", "Дата рождения", "Год поступления", "Институт", "Кафедра", "Группа", "Номер", "Пол"};
 
-        // Вычисляем максимальную ширину столбцов
         int maxWidth = 15;
         for (const auto& param : parameters) {
             maxWidth = max(maxWidth, static_cast<int>(param.length()));
         }
         maxWidth = min(maxWidth, 20);
 
-        // Выводим данные по студентам построчно, по 10 студентов в каждой строке
         for (size_t i = 0; i < vectorStudent.size(); i += 10) {
-            // Выводим заголовок таблицы
             for (const auto& param : parameters) {
                 cout << "| " << setw(maxWidth) << left << param;
             }
             cout << "|" << endl;
 
-            int totalWidth = maxWidth * parameters.size() + (parameters.size() - 1) * 3 + 1; // Общая ширина таблицы
+            int totalWidth = maxWidth * parameters.size() + (parameters.size() - 1) * 3 + 1;
             cout << string(totalWidth - 7, '-') << endl;
 
-            // Выводим данные по студентам
             for (size_t j = i; j < min(i + 10, vectorStudent.size()); ++j) {
                 const auto& student = vectorStudent[j];
                 for (const auto& param : parameters) {
@@ -622,7 +699,7 @@ public:
                     } else if (param == "Отчество") {
                         cout << "| " << setw(maxWidth) << left << student.patronymic;
                     } else if (param == "Дата рождения") {
-                        cout << "| " << setw(maxWidth) << left << student.birthDate;
+                        cout << "| " << setw(maxWidth) << left << string(student.birthDate, 0, 10);
                     } else if (param == "Год поступления") {
                         cout << "| " << setw(maxWidth) << left << student.admissionYear;
                     } else if (param == "Институт") {
@@ -641,7 +718,7 @@ public:
             }
 
             cout << string(totalWidth - 7, '-') << endl;
-            cout << endl; // Добавляем пустую строку между блоками
+            cout << endl;
         }
     }
 
@@ -799,8 +876,8 @@ public:
             printMainMenu();
         }
         if (tag == "q") {
-            saveToFile("new_students.bin", studentsDefault, 1);
-            studentGrades.saveGradesToFile("new_grades.bin");
+            saveToFile("students.bin", studentsDefault, 1);
+            studentGrades.saveGradesToFile("grades.bin");
             exit(0);
         }
     }
@@ -812,11 +889,26 @@ int main() {
 
     StudentManager studentManager;
 
-    studentManager.readStudentsFromFile("students.bin");
-    studentManager.loadGradesFromFile("grades.bin");
+    char* password = generatePassword();
+
+    if (!encryptFile("students.bin", "students.bin.enc", password)) {
+        cout << "Error encrypting students.bin" << endl;
+        delete[] password;
+        return 1;
+    }
+
+    if (!encryptFile("grades.bin", "grades.bin.enc", password)) {
+        cout << "Error encrypting grades.bin" << endl;
+        delete[] password;
+        return 1;
+    }
+
+    studentManager.readStudentsFromFile("students.bin.enc", password);
+    studentManager.loadGradesFromFile("grades.bin.enc", password);
+
+    delete[] password;
+
     studentManager.printMainMenu();
 
     return 0;
 }
-
-// TODO шифрование

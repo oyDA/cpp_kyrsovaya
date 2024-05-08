@@ -1,11 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/AB" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/AT" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/example_grades.bin" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/example_grades.txt" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/example_students.bin" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/example_students.txt" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/grades.bin" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/groupOne.bin" charset="windows-1251" />
     <file url="file://$PROJECT_DIR$/groupOne.txt" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/groupTwo.bin" charset="windows-1251" />
     <file url="file://$PROJECT_DIR$/groupTwo.txt" charset="windows-1251" />
     <file url="file://$PROJECT_DIR$/main.cpp" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/new_grades.bin" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/new_students.bin" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/records.bin" charset="windows-1251" />
     <file url="file://$PROJECT_DIR$/sorted_students.txt" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/student.bin" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/students.bin" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/students.bin.dec" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/students.bin.enc" charset="windows-1251" />
     <file url="file://$PROJECT_DIR$/students.txt" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/students_decrypted.bin" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/students_enc.bin" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/students_encrypted.bin" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/supertest.cpp" charset="windows-1251" />
     <file url="file://$PROJECT_DIR$/test.cpp" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/we.cpp" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/we2.cpp" charset="windows-1251" />
+    <file url="file://$USER_HOME$/OneDrive/Рабочий стол/grades.bin" charset="windows-1251" />
+    <file url="file://$USER_HOME$/OneDrive/Рабочий стол/students.bin" charset="windows-1251" />
   </component>
 </project>

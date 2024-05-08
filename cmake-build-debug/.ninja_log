@@ -1,7 +1,8 @@
 # ninja log v5
-2	1827	7353350259356398	CMakeFiles/cpp_kyrsovaya.dir/main.cpp.obj	3f6e456080c50b37
-0	161	7353350316010632	build.ninja	796b7148674d60a7
-1741	1869	7353343256163769	cpp_kyrsovaya.exe	226ecb56b1179db4
-4	72	7353236207945461	CMakeFiles/cpp_kyrsovaya.dir/test.cpp.obj	59125f0bfe57da8c
-1	368	7353350316010632	build.ninja	796b7148674d60a7
-4	145	7353350318315441	cpp_kyrsovaya.exe	65715ad1ac203b6c
+4	3487	7368850170679622	CMakeFiles/cpp_kyrsovaya.dir/main.cpp.obj	3f6e456080c50b37
+11	753	7368851668227526	build.ninja	796b7148674d60a7
+4	2037	7368529579620895	CMakeFiles/cpp_kyrsovaya.dir/we.cpp.obj	167a9e149a689944
+3487	3932	7368850175179805	cpp_kyrsovaya.exe	226ecb56b1179db4
+4	62	7368805451878121	CMakeFiles/cpp_kyrsovaya.dir/test.cpp.obj	59125f0bfe57da8c
+3	67	7360337330297858	CMakeFiles/cpp_kyrsovaya.dir/supertest.cpp.obj	75e5342dbbb6d61f
+1	2310	7368529700440539	CMakeFiles/cpp_kyrsovaya.dir/we2.cpp.obj	52c48910930efa19
